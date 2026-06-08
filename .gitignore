@@ -1,0 +1,22 @@
+# Maven build output
+backend/target/
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# H2 database files (local)
+*.mv.db
+*.trace.db
+
+# Node (if any)
+node_modules/

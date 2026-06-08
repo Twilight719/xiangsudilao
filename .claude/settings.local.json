@@ -1,0 +1,44 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(java -version)",
+      "Bash(jar tf *)",
+      "Bash(unzip -p target/dungeon-backend-1.0.0.jar META-INF/MANIFEST.MF)",
+      "Bash(java -cp \"dungeon-backend-1.0.0.jar.original;jar_extract/BOOT-INF/lib/*\" com.dungeon.DungeonApplication)",
+      "Bash(echo \"PID: $!\")",
+      "Read(//tmp/**)",
+      "Bash(curl -s -w \"\\\\nHTTP_CODE:%{http_code}\" http://localhost:8080/api/auth/register -X POST -H \"Content-Type: application/json\" -d '{\"username\":\"testuser999\",\"password\":\"test1234\"}')",
+      "Bash(curl -s -w \"\\\\nHTTP_CODE:%{http_code}\" http://localhost:8080/api/auth/login -X POST -H \"Content-Type: application/json\" -d '{\"username\":\"testuser999\",\"password\":\"test1234\"}')",
+      "Bash(curl -s -D - -o /dev/null http://localhost:8080/api/auth/register -X OPTIONS -H \"Origin: null\" -H \"Access-Control-Request-Method: POST\" -H \"Access-Control-Request-Headers: Content-Type\")",
+      "Bash(ls \"/c/Program Files/Java/jdk-17.0.1/bin/java.exe\" 2>/dev/null && echo \"JDK 17.0.1 EXISTS\" || echo \"JDK 17.0.1 NOT FOUND at specified path\")",
+      "Read(//c/Program Files/Java/jdk-17.0.1/bin/**)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Program Files//**)",
+      "Bash(where java *)",
+      "Bash(java -Xdiag)",
+      "Bash(java --version)",
+      "Bash(unzip -p test.jar BOOT-INF/classes/com/dungeon/DungeonApplication.class)",
+      "Bash(/c/Windows/System32/findstr.exe /?)",
+      "Bash(javap -p DungeonApplication.class)",
+      "Bash(unzip -l test.jar)",
+      "Bash(java -Dlogging.level.org.springframework.boot.loader=DEBUG -jar test.jar)",
+      "Bash(kill %1)",
+      "Bash(find \"/c/Users/张坤源\" -name \"mvnw\" -type f 2>/dev/null | head -5; find \"/c/Users/张坤源\" -path \"*/.m2/wrapper*\" -name \"maven-wrapper.jar\" 2>/dev/null | head -5)",
+      "Read(//c/Users/张坤源/**)",
+      "Read(//d/java/**)",
+      "Read(//d//**)",
+      "Bash(mkdir -p \"c:/Users/张坤源/Desktop/像素地牢（测试）/backend/.mvn/wrapper\")",
+      "Bash(cp \"/c/Users/张坤源/.vscode/extensions/vscjava.vscode-maven-0.45.3/resources/maven-wrapper/.mvn/wrapper/maven-wrapper.jar\" \"c:/Users/张坤源/Desktop/像素地牢（测试）/backend/.mvn/wrapper/\")",
+      "Bash(cp \"/c/Users/张坤源/.vscode/extensions/vscjava.vscode-maven-0.45.3/resources/maven-wrapper/.mvn/wrapper/maven-wrapper.properties\" \"c:/Users/张坤源/Desktop/像素地牢（测试）/backend/.mvn/wrapper/\")",
+      "Bash(cp \"/c/Users/张坤源/.vscode/extensions/vscjava.vscode-maven-0.45.3/resources/maven-wrapper/mvnw\" \"c:/Users/张坤源/Desktop/像素地牢（测试）/backend/\")",
+      "Bash(cp \"/c/Users/张坤源/.vscode/extensions/vscjava.vscode-maven-0.45.3/resources/maven-wrapper/mvnw.cmd\" \"c:/Users/张坤源/Desktop/像素地牢（测试）/backend/\")",
+      "Bash(JAVA_HOME=\"D:/java\" ./mvnw clean package -DskipTests)",
+      "Bash(taskkill //F //IM java.exe)",
+      "Bash(cp \"c:/Users/张坤源/Desktop/像素地牢（测试）/backend/target/启动游戏.bat\" \"c:/Users/张坤源/Desktop/像素地牢（测试）/backend/target/dungeon-backend-1.0.0.jar\" \"/tmp/share/\" 2>/dev/null; cp \"c:/Users/张坤源/Desktop/像素地牢（测试）/backend/target/启动游戏.bat\" \"c:/Users/张坤源/Desktop/像素地牢（测试）/\" && echo \"完成\")",
+      "Bash(taskkill //F //IM javaw.exe)"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
+    ]
+  }
+}

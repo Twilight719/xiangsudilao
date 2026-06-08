@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>元气地牢 - Roguelike</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #1a1a2e;
+            color: #fff;
+            font-family: 'Microsoft YaHei', sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            user-select: none;
+        }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            border: 2px solid #333;
+        }
+        canvas { display: block; background: #222; cursor: crosshair; width: 100%; height: 100%; touch-action: none; }
+        #ui-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+        }
+        #instructions {
+            position: absolute;
+            bottom: 10px; left: 10px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            pointer-events: none;
+        }
+        .hidden { display: none !important; }
+
+        /* Loading */
+        #loading {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #1a1a2e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            pointer-events: auto;
+        }
+        #loading h1 {
+            font-size: 32px; margin-bottom: 20px;
+            color: #e94560;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        #loading-bar {
+            width: 300px; height: 20px;
+            background: #333; border-radius: 10px;
+            overflow: hidden;
+        }
+        #loading-progress {
+            height: 100%; width: 0%;
+            background: #e94560;
+            transition: width 0.3s;
+        }
+        #loading-text { margin-top: 10px; font-size: 14px; color: #aaa; }
+
+        /* Menu buttons */
+        .menu-btn {
+            background: #16213e;
+            border: 2px solid #e94560;
+            color: #fff;
+            padding: 12px 40px;
+            margin: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+            font-family: inherit;
+            min-width: 220px;
+        }
+        .menu-btn:hover { background: #e94560; transform: scale(1.05); }
+        .menu-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; border-color: #555; }
+
+        /* Main Menu */
+        #main-menu {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(26, 26, 46, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            pointer-events: auto;
+        }
+        #main-menu h1 {
+            font-size: 48px; color: #e94560;
+            margin-bottom: 10px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+            letter-spacing: 4px;
+        }
+        #main-menu .subtitle { color: #aaa; margin-bottom: 40px; font-size: 14px; }
+
+        /* Hall */
+        #hall {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(10, 10, 20, 0.97);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            z-index: 45;
+            pointer-events: auto;
+            padding: 30px;
+        }
+        #hall h2 { font-size: 28px; color: #e94560; margin-bottom: 10px; }
+        #hall .gem-display { color: #ffd700; font-size: 18px; margin-bottom: 20px; }
+        .hall-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+            width: 100%;
+            max-width: 600px;
+        }
+        .upgrade-card {
+            background: #1e1e3a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .upgrade-card:hover { border-color: #e94560; transform: translateY(-2px); }
+        .upgrade-card.maxed { opacity: 0.5; border-color: #4caf50; cursor: default; }
+        .upgrade-card.maxed:hover { transform: none; }
+        .upgrade-card h4 { font-size: 14px; margin-bottom: 6px; }
+        .upgrade-card p { font-size: 12px; color: #aaa; margin-bottom: 8px; }
+        .upgrade-card .cost { color: #ffd700; font-size: 13px; }
+        .upgrade-card .level { color: #4caf50; font-size: 12px; margin-top: 4px; }
+
+        /* Pause */
+        #pause-menu {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 60;
+            pointer-events: auto;
+        }
+        #pause-menu h2 { font-size: 36px; margin-bottom: 30px; }
+
+        /* Settlement */
+        #settlement {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.88);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 75;
+            pointer-events: auto;
+        }
+        #settlement h2 { font-size: 42px; margin-bottom: 15px; }
+        #settlement .win { color: #4caf50; }
+        #settlement .lose { color: #e94560; }
+        #settlement p { font-size: 16px; margin: 4px; color: #ccc; }
+        #settlement .gems-earned { color: #ffd700; font-size: 22px; margin: 10px; }
+
+        /* Talent Select */
+        #talent-select {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 65;
+            pointer-events: auto;
+        }
+        #talent-select h2 { font-size: 32px; margin-bottom: 10px; color: #e94560; }
+        #talent-select .levelup-text { font-size: 18px; color: #ffd700; margin-bottom: 25px; }
+        .talent-grid {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+        .talent-card {
+            background: #1e1e3a;
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 25px;
+            width: 200px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .talent-card:hover { border-color: #e94560; transform: scale(1.05); }
+        .talent-card h4 { font-size: 16px; margin-bottom: 10px; color: #fff; }
+        .talent-card p { font-size: 13px; color: #aaa; }
+        .talent-card .tier { font-size: 11px; color: #ff9800; margin-top: 8px; }
+
+        /* Auth Panel */
+        #auth-panel {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(10, 10, 20, 0.98);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            pointer-events: auto;
+        }
+        #auth-panel h2 { font-size: 36px; color: #e94560; margin-bottom: 20px; }
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 280px;
+        }
+        .auth-form input {
+            background: #1e1e3a;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 12px 16px;
+            border-radius: 4px;
+            font-size: 15px;
+            font-family: inherit;
+        }
+        .auth-form input:focus { outline: none; border-color: #e94560; }
+        .auth-switch {
+            color: #aaa;
+            font-size: 13px;
+            margin-top: 8px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .auth-switch:hover { color: #e94560; }
+        .auth-error { color: #f44336; font-size: 13px; text-align: center; min-height: 18px; }
+        #user-info {
+            position: absolute;
+            top: 10px; right: 10px;
+            color: #e94560;
+            font-size: 13px;
+            z-index: 55;
+            display: none;
+            pointer-events: auto;
+        }
+        #user-info span { margin-right: 10px; }
+        #btn-logout {
+            background: transparent;
+            border: 1px solid #f44336;
+            color: #f44336;
+            padding: 3px 10px;
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-family: inherit;
+        }
+        #btn-logout:hover { background: #f44336; color: #fff; }
+
+        /* Interact hint */
+        #interact-hint {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            padding: 8px 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #ffd700;
+            display: none;
+            pointer-events: none;
+        }
+
+        /* Weapon Select */
+        #weapon-select {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.88);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 68;
+            pointer-events: auto;
+        }
+        #weapon-select h2 { font-size: 28px; margin-bottom: 10px; color: #e94560; }
+        #weapon-select .hint { font-size: 14px; color: #aaa; margin-bottom: 25px; }
+        .weapon-grid {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .weapon-card {
+            background: #1e1e3a;
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 20px;
+            width: 180px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .weapon-card:hover { border-color: #e94560; transform: scale(1.05); }
+        .weapon-card h4 { font-size: 15px; margin-bottom: 8px; color: #fff; }
+        .weapon-card p { font-size: 12px; color: #aaa; margin: 3px 0; }
+        .weapon-card .tag { font-size: 11px; color: #ff9800; margin-top: 8px; }
+        .weapon-card.drop { border-color: #f44336; }
+        .weapon-card.drop:hover { border-color: #ff5252; }
+
+        /* Shop */
+        #shop-menu {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.88);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 68;
+            pointer-events: auto;
+        }
+        #shop-menu h2 { font-size: 28px; margin-bottom: 5px; color: #ffd700; }
+        .shop-grid {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .shop-card {
+            background: #1e1e3a;
+            border: 2px solid #4caf50;
+            border-radius: 10px;
+            padding: 20px;
+            width: 150px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .shop-card:hover { border-color: #ffd700; transform: scale(1.05); }
+        .shop-card.sold { opacity: 0.4; border-color: #555; cursor: default; pointer-events: none; }
+        .shop-card h4 { font-size: 14px; margin-bottom: 8px; color: #fff; }
+        .shop-card p { font-size: 11px; color: #aaa; margin: 3px 0; }
+        .shop-card .price { font-size: 14px; color: #ffd700; margin-top: 8px; font-weight: bold; }
+
+        @keyframes rotateAnim {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(90deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        @media (max-height: 500px) {
+            .menu-btn { padding: 8px 16px; font-size: 14px; min-width: 140px; margin: 4px; }
+            #main-menu h1 { font-size: 28px; margin-bottom: 6px; }
+            #main-menu .subtitle { margin-bottom: 20px; font-size: 12px; }
+            #pause-menu h2 { font-size: 24px; margin-bottom: 15px; }
+            .talent-card { padding: 12px; width: 140px; }
+            .weapon-card { padding: 12px; width: 130px; }
+            .shop-card { padding: 12px; width: 120px; }
+            #loading h1 { font-size: 24px; }
+            #loading-bar { width: 200px; height: 16px; }
+            .hall-grid { gap: 8px; }
+            .upgrade-card { padding: 10px; }
+            .upgrade-card h4 { font-size: 12px; }
+            .auth-form input { padding: 8px 12px; font-size: 13px; }
+            #hall h2 { font-size: 22px; margin-bottom: 6px; }
+            #hall .gem-display { font-size: 15px; margin-bottom: 12px; }
+            #talent-select h2 { font-size: 24px; }
+            #weapon-select h2 { font-size: 22px; }
+            #shop-menu h2 { font-size: 22px; }
+            #settlement h2 { font-size: 30px; }
+        }
+
+        @media (pointer: coarse) {
+            #instructions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="ui-layer">
+            <div id="instructions">WASD移动 | 鼠标瞄准 | 左键射击 | 右键翻滚 | Q切换武器 | F互动 | ESC暂停</div>
+            <div id="interact-hint">按 F 打开宝箱</div>
+        </div>
+        
+        <div id="loading">
+            <h1>元气地牢</h1>
+            <div id="loading-bar"><div id="loading-progress"></div></div>
+            <div id="loading-text">加载资源中...</div>
+            <div id="backend-status" style="margin-top:15px;font-size:13px;color:#aaa;min-height:18px;"></div>
+        </div>
+        
+        <div id="main-menu" class="hidden">
+            <h1>元气地牢</h1>
+            <div class="subtitle">俯视角Roguelike动作射击</div>
+            <button class="menu-btn" id="btn-start">进入大厅</button>
+            <button class="menu-btn" id="btn-help">操作说明</button>
+        </div>
+        
+        <div id="hall">
+            <h2>地牢大厅</h2>
+            <div class="gem-display" id="hall-gems">💎 宝石: 0</div>
+            <div class="hall-grid" id="hall-upgrades">
+                <!-- upgrades injected by JS -->
+            </div>
+            <button class="menu-btn" id="btn-enter-dungeon">进入地牢</button>
+            <button class="menu-btn" id="btn-reset-save" style="min-width:180px;font-size:13px;border-color:#f44336;color:#f44336;">重置存档</button>
+            <button class="menu-btn" id="btn-hall-menu" style="min-width:180px;font-size:14px;border-color:#555;">返回主菜单</button>
+        </div>
+        
+        <div id="talent-select">
+            <h2>升级！</h2>
+            <div class="levelup-text" id="talent-level-text">选择一项天赋</div>
+            <div class="talent-grid" id="talent-options">
+                <!-- talents injected by JS -->
+            </div>
+        </div>
+        
+        <div id="weapon-select">
+            <h2>武器已满</h2>
+            <div class="hint">选择要替换的武器，或点击新武器直接替换当前武器</div>
+            <div class="weapon-grid" id="weapon-options">
+                <!-- weapons injected by JS -->
+            </div>
+            <button class="menu-btn" id="btn-weapon-cancel" style="min-width:180px;font-size:14px;border-color:#555;">取消</button>
+        </div>
+        
+        <div id="pause-menu">
+            <h2>游戏暂停</h2>
+            <button class="menu-btn" id="btn-resume">继续游戏</button>
+            <button class="menu-btn" id="btn-restart">重新开始</button>
+            <button class="menu-btn" id="btn-quit">返回大厅</button>
+        </div>
+        
+        <div id="settlement">
+            <h2 id="settle-title" class="lose">游戏结束</h2>
+            <p id="settle-kills">击杀: 0</p>
+            <p id="settle-floor">到达层数: 1</p>
+            <div class="gems-earned" id="settle-gems">获得宝石: 0</div>
+            <button class="menu-btn" id="btn-settle-hall">回到大厅</button>
+            <button class="menu-btn" id="btn-settle-again" style="border-color:#555;">再来一局</button>
+        </div>
+        
+        <div id="shop-menu">
+            <h2>地牢商店</h2>
+            <div class="hint" style="color:#aaa;margin-bottom:20px;">按 F 或点击购买 | 按 ESC 离开</div>
+            <div class="shop-grid" id="shop-options">
+                <!-- shop items injected by JS -->
+            </div>
+            <button class="menu-btn" id="btn-shop-leave" style="min-width:180px;font-size:14px;border-color:#555;">离开商店</button>
+        </div>
+
+        <div id="auth-panel">
+            <h2 id="auth-title">登录</h2>
+            <div class="auth-form">
+                <input type="text" id="auth-username" placeholder="用户名" maxlength="32">
+                <input type="password" id="auth-password" placeholder="密码" maxlength="64">
+                <input type="password" id="auth-password2" placeholder="确认密码" maxlength="64" style="display:none;">
+                <div class="auth-error" id="auth-error"></div>
+                <button class="menu-btn" id="btn-auth-submit">登录</button>
+                <div class="auth-switch" id="btn-auth-switch">还没有账号？点击注册</div>
+                <button class="menu-btn" id="btn-auth-guest" style="min-width:180px;font-size:14px;border-color:#555;margin-top:10px;">游客模式（不登录）</button>
+            </div>
+        </div>
+
+        <div id="rotate-warning" style="display:none;">
+            <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:300;pointer-events:auto;">
+                <div style="font-size:64px;margin-bottom:20px;animation:rotateAnim 2s infinite;">⟳</div>
+                <div style="font-size:24px;color:#e94560;margin-bottom:10px;">请旋转设备</div>
+                <div style="font-size:14px;color:#aaa;">为获得最佳体验，请使用横屏模式</div>
+            </div>
+        </div>
+
+        <div id="user-info">
+            <span id="user-name"></span>
+            <button id="btn-logout">退出</button>
+        </div>
+
+        <div id="game-over" class="hidden">
+            <h2 id="go-title">游戏结束</h2>
+            <p id="go-score">击杀: 0</p>
+            <p id="go-floor">到达层数: 1</p>
+            <button class="menu-btn" id="btn-go-restart" style="margin-top:20px;">再来一局</button>
+            <button class="menu-btn" id="btn-go-menu">返回主菜单</button>
+        </div>
+    </div>
+    
+    <script src="api.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

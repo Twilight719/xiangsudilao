@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -o /dev/null -w \"game.js HTTP: %{http_code}\\\\nindex.html HTTP: %{http_code}\\\\napi.js HTTP: %{http_code}\\\\n\" http://localhost:8080/game.js http://localhost:8080/index.html http://localhost:8080/api.js)"
+    ]
+  }
+}
